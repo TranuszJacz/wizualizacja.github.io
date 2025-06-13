@@ -4,9 +4,11 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: process.env.NODE_ENV === 'production' ? '/wizualizacja/' : '/',
+  base: '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-  }
+  },
+  // Ensure .nojekyll file is created
+  publicDir: 'public'
 })
