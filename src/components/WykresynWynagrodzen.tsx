@@ -11,6 +11,7 @@ const WykresynWynagrodzen: React.FC = () => {
   const [data, setData] = useState<WynagrodzeniaData[]>([]);
   const [selectedWojewodztwa, setSelectedWojewodztwa] = useState<string[]>([]);
   const [availableWojewodztwa, setAvailableWojewodztwa] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Kolory dla różnych województw
   const colors = [
@@ -114,6 +115,15 @@ const WykresynWynagrodzen: React.FC = () => {
   const formatTooltip = (value: number, name: string) => {
     return [`${value} zł`, name];
   };
+
+  if (loading) {
+    return (
+      <div className="chart-section">
+        <h2>Wzrost Wynagrodzeń w Czasie dla Różnych Regionów</h2>
+        <div className="loading">Ładowanie danych wynagrodzeń...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="chart-section">
