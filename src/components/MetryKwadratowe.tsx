@@ -141,18 +141,24 @@ const MetryKwadratowe: React.FC = () => {
           const years = Object.keys(housingData).map(Number).sort();
           const wojewodztwa = Object.keys(housingData[years[0]] || {});
           
+          // Średnia powierzchnia mieszkania w Polsce (około 65 m²)
+          const SREDNIA_POWIERZCHNIA_MIESZKANIA = 65;
+          
           const result: MetryData[] = [];
           
           years.forEach(rok => {
             const yearData: MetryData = { rok };
             
             wojewodztwa.forEach(wojewodztwo => {
-              const cena = housingData[rok]?.[wojewodztwo];
+              const cenaCalegoMieszkania = housingData[rok]?.[wojewodztwo];
               const wynagrodzenie = salaryData[rok]?.[wojewodztwo];
               
-              if (cena && wynagrodzenie && cena > 0 && wynagrodzenie > 0) {
-                // Ile m² można kupić za średnią wypłatę
-                const metryKwadratowe = wynagrodzenie / cena;
+              if (cenaCalegoMieszkania && wynagrodzenie && cenaCalegoMieszkania > 0 && wynagrodzenie > 0) {
+                // Oblicz cenę za m² (cena całego mieszkania / średnia powierzchnia)
+                const cenaZaMetr = cenaCalegoMieszkania / SREDNIA_POWIERZCHNIA_MIESZKANIA;
+                
+                // Ile m² można kupić za średnią miesięczną wypłatę
+                const metryKwadratowe = wynagrodzenie / cenaZaMetr;
                 yearData[wojewodztwo] = Math.round(metryKwadratowe * 100) / 100; // Zaokrąglenie do 2 miejsc po przecinku
               }
             });
@@ -229,7 +235,7 @@ const MetryKwadratowe: React.FC = () => {
         <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="rok" />
-          <YAxis label={{ value: 'Metry kwadratowe za średnią wypłatę', angle: -90, position: 'insideLeft' }} />
+          <YAxis label={{ value: 'm² za miesięczną wypłatę', angle: -90, position: 'insideLeft' }} />
           <Tooltip formatter={formatTooltip} />
           <Legend />
           {selectedWojewodztwa.map((wojewodztwo, index) => (
@@ -250,7 +256,7 @@ const MetryKwadratowe: React.FC = () => {
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="rok" />
-          <YAxis label={{ value: 'Metry kwadratowe za średnią wypłatę', angle: -90, position: 'insideLeft' }} />
+          <YAxis label={{ value: 'm² za miesięczną wypłatę', angle: -90, position: 'insideLeft' }} />
           <Tooltip formatter={formatTooltip} />
           <Legend />
           {selectedWojewodztwa.map((wojewodztwo, index) => (
@@ -271,7 +277,20 @@ const MetryKwadratowe: React.FC = () => {
 
   return (
     <div className="chart-section">
-      <h2>Ile m² Można Kupić za Średnią Wypłatę</h2>
+      <h2>Ile m² Można Kupić za Średnią Miesięczną Wypłatę</h2>
+      
+      <div className="info-box" style={{ 
+        background: '#f8f9fa', 
+        border: '1px solid #dee2e6', 
+        borderRadius: '8px', 
+        padding: '15px', 
+        marginBottom: '20px',
+        fontSize: '14px',
+        color: '#6c757d'
+      }}>
+        <strong>Metodologia obliczeń:</strong> Wykres pokazuje ile metrów kwadratowych można kupić za jedną średnią miesięczną wypłatę brutto.
+        Obliczenia oparte są na średniej cenie całego mieszkania podzielonej przez założoną średnią powierzchnię mieszkania w Polsce (65 m²).
+      </div>
       
       <div className="controls">
         <div className="control-row">
