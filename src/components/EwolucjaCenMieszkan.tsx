@@ -50,7 +50,7 @@ const EwolucjaCenMieszkan: React.FC = () => {
     );
   };
 
-  const formatTooltip = (value: any, name: string) => {
+  const formatTooltip = (value: number, name: string) => {
     return [`${value.toLocaleString()} zł/m²`, name];
   };
 

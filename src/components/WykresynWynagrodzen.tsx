@@ -49,7 +49,7 @@ const WykresynWynagrodzen: React.FC = () => {
     );
   };
 
-  const formatTooltip = (value: any, name: string) => {
+  const formatTooltip = (value: number, name: string) => {
     return [`${value} zł`, name];
   };
 

@@ -72,7 +72,7 @@ const PorownanieTrendow: React.FC = () => {
     setData(generateData(selectedWojewodztwo));
   }, [selectedWojewodztwo]);
 
-  const formatTooltip = (value: any, name: string) => {
+  const formatTooltip = (value: number, name: string) => {
     if (viewType === 'growth') {
       return [`${value}%`, name === 'wzrostCen' ? 'Wzrost cen mieszkań' : 'Wzrost wynagrodzeń'];
     } else if (viewType === 'index') {
