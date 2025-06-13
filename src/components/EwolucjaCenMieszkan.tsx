@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import Papa from 'papaparse';
 
 interface CenyData {
   rok: number;
@@ -11,6 +12,7 @@ const EwolucjaCenMieszkan: React.FC = () => {
   const [selectedWojewodztwa, setSelectedWojewodztwa] = useState<string[]>([]);
   const [availableWojewodztwa, setAvailableWojewodztwa] = useState<string[]>([]);
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
+  const [loading, setLoading] = useState(true);
 
   // Kolory dla różnych województw
   const colors = [
@@ -20,26 +22,87 @@ const EwolucjaCenMieszkan: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Symulowane dane cen mieszkań dla różnych województw (2015-2024)
-    const mockData: CenyData[] = [
-      { rok: 2015, 'Mazowieckie': 8000, 'Śląskie': 6500, 'Wielkopolskie': 6000, 'Małopolskie': 7000, 'Dolnośląskie': 6800, 'Pomorskie': 6200, 'Łódzkie': 5500 },
-      { rok: 2016, 'Mazowieckie': 8500, 'Śląskie': 6900, 'Wielkopolskie': 6350, 'Małopolskie': 7400, 'Dolnośląskie': 7200, 'Pomorskie': 6600, 'Łódzkie': 5800 },
-      { rok: 2017, 'Mazowieckie': 9200, 'Śląskie': 7400, 'Wielkopolskie': 6800, 'Małopolskie': 7900, 'Dolnośląskie': 7700, 'Pomorskie': 7100, 'Łódzkie': 6200 },
-      { rok: 2018, 'Mazowieckie': 10000, 'Śląskie': 8000, 'Wielkopolskie': 7400, 'Małopolskie': 8600, 'Dolnośląskie': 8300, 'Pomorskie': 7700, 'Łódzkie': 6700 },
-      { rok: 2019, 'Mazowieckie': 10800, 'Śląskie': 8600, 'Wielkopolskie': 8000, 'Małopolskie': 9300, 'Dolnośląskie': 9000, 'Pomorskie': 8300, 'Łódzkie': 7200 },
-      { rok: 2020, 'Mazowieckie': 11500, 'Śląskie': 9200, 'Wielkopolskie': 8500, 'Małopolskie': 9900, 'Dolnośląskie': 9600, 'Pomorskie': 8800, 'Łódzkie': 7600 },
-      { rok: 2021, 'Mazowieckie': 12500, 'Śląskie': 10000, 'Wielkopolskie': 9200, 'Małopolskie': 10800, 'Dolnośląskie': 10400, 'Pomorskie': 9500, 'Łódzkie': 8200 },
-      { rok: 2022, 'Mazowieckie': 13800, 'Śląskie': 11000, 'Wielkopolskie': 10100, 'Małopolskie': 11900, 'Dolnośląskie': 11400, 'Pomorskie': 10400, 'Łódzkie': 9000 },
-      { rok: 2023, 'Mazowieckie': 15200, 'Śląskie': 12100, 'Wielkopolskie': 11100, 'Małopolskie': 13100, 'Dolnośląskie': 12500, 'Pomorskie': 11400, 'Łódzkie': 9900 },
-      { rok: 2024, 'Mazowieckie': 16800, 'Śląskie': 13300, 'Wielkopolskie': 12200, 'Małopolskie': 14400, 'Dolnośląskie': 13700, 'Pomorskie': 12500, 'Łódzkie': 10900 }
-    ];
+    const loadData = async () => {
+      try {
+        const response = await fetch('/Dane(Sheet1).csv');
+        const csvText = await response.text();
+        
+        Papa.parse(csvText, {
+          header: false,
+          complete: (result) => {
+            const rows = result.data as string[][];
+            if (rows.length > 1) {
+              // Pierwsza linia zawiera lata (pomijamy pierwszą kolumnę z nazwą)
+              const years = rows[0].slice(1).map(year => parseInt(year));
+              
+              // Przygotowujemy dane w formacie potrzebnym do wykresu
+              const processedData: CenyData[] = years.map(rok => {
+                const yearData: CenyData = { rok };
+                
+                // Dla każdego województwa dodajemy cenę za dany rok
+                rows.slice(1).forEach((row) => {
+                  if (row[0] && row.length > 1) {
+                    // Czyścimy nazwę województwa
+                    const wojewodztwo = row[0]
+                      .replace(/[^\p{L}\s-]/gu, '')
+                      .trim()
+                      .replace(/ŚLĄSKIE/g, 'Śląskie')
+                      .replace(/DOLNOŚLĄSKIE/g, 'Dolnośląskie')
+                      .replace(/KUJAWSKO-POMORSKIE/g, 'Kujawsko-Pomorskie')
+                      .replace(/LUBELSKIE/g, 'Lubelskie')
+                      .replace(/LUBUSKIE/g, 'Lubuskie')
+                      .replace(/ŁÓDZKIE/g, 'Łódzkie')
+                      .replace(/MAŁOPOLSKIE/g, 'Małopolskie')
+                      .replace(/MAZOWIECKIE/g, 'Mazowieckie')
+                      .replace(/OPOLSKIE/g, 'Opolskie')
+                      .replace(/PODKARPACKIE/g, 'Podkarpackie')
+                      .replace(/PODLASKIE/g, 'Podlaskie')
+                      .replace(/POMORSKIE/g, 'Pomorskie')
+                      .replace(/ŚWIĘTOKRZYSKIE/g, 'Świętokrzyskie')
+                      .replace(/WARMIŃSKO-MAZURSKIE/g, 'Warmińsko-Mazurskie')
+                      .replace(/WIELKOPOLSKIE/g, 'Wielkopolskie')
+                      .replace(/ZACHODNIOPOMORSKIE/g, 'Zachodniopomorskie');
+                    
+                    // Znajdź indeks roku i pobierz cenę
+                    const yearIndex = years.indexOf(rok);
+                    if (yearIndex !== -1 && row[yearIndex + 1]) {
+                      // Konwertuj cenę (usuń separatory tysięcy i zamień przecinek na kropkę)
+                      const priceStr = row[yearIndex + 1]
+                        .replace(/[^\d,]/g, '')
+                        .replace(',', '.');
+                      const price = parseFloat(priceStr);
+                      
+                      if (!isNaN(price) && price > 0) {
+                        yearData[wojewodztwo] = Math.round(price);
+                      }
+                    }
+                  }
+                });
+                
+                return yearData;
+              });
+              
+              setData(processedData);
+              
+              // Wyciągnij nazwy województw z pierwszego roku danych
+              const wojewodztwa = Object.keys(processedData[0] || {}).filter(key => key !== 'rok');
+              setAvailableWojewodztwa(wojewodztwa);
+              setSelectedWojewodztwa(wojewodztwa.slice(0, 4));
+            }
+            setLoading(false);
+          },
+          error: (error: Error) => {
+            console.error('Błąd podczas parsowania CSV:', error);
+            setLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('Błąd podczas ładowania danych:', error);
+        setLoading(false);
+      }
+    };
 
-    setData(mockData);
-    
-    // Wyciągnij nazwy województw (pomijając kolumnę 'rok')
-    const wojewodztwa = Object.keys(mockData[0]).filter(key => key !== 'rok');
-    setAvailableWojewodztwa(wojewodztwa);
-    setSelectedWojewodztwa(wojewodztwa.slice(0, 4)); // Wybierz pierwsze 4 domyślnie
+    loadData();
   }, []);
 
   const handleWojewodztwoToggle = (wojewodztwo: string) => {
@@ -53,6 +116,15 @@ const EwolucjaCenMieszkan: React.FC = () => {
   const formatTooltip = (value: number, name: string) => {
     return [`${value.toLocaleString()} zł/m²`, name];
   };
+
+  if (loading) {
+    return (
+      <div className="chart-section">
+        <h2>Ewolucja Cen Mieszkań w Poszczególnych Województwach</h2>
+        <div className="loading">Ładowanie danych cen mieszkań...</div>
+      </div>
+    );
+  }
 
   const calculateGrowthRate = (wojewodztwo: string) => {
     const firstValue = data[0]?.[wojewodztwo] as number;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import Papa from 'papaparse';
 
 interface MetryData {
   rok: number;
@@ -11,6 +12,7 @@ const MetryKwadratowe: React.FC = () => {
   const [selectedWojewodztwa, setSelectedWojewodztwa] = useState<string[]>([]);
   const [availableWojewodztwa, setAvailableWojewodztwa] = useState<string[]>([]);
   const [chartType, setChartType] = useState<'area' | 'line'>('area');
+  const [loading, setLoading] = useState(true);
 
   // Kolory dla różnych województw
   const colors = [
@@ -19,72 +21,165 @@ const MetryKwadratowe: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Obliczanie ile m² można kupić za średnią wypłatę
-    const calculateAffordability = () => {
-      const wojewodztwaData = {
-        'Mazowieckie': {
-          cenyBaza: 8000,
-          wynagrodzeniBaza: 4500,
-          wzrostCen: 1.095,
-          wzrostWynagrodzen: 1.06
-        },
-        'Śląskie': {
-          cenyBaza: 6500,
-          wynagrodzeniBaza: 3800,
-          wzrostCen: 1.08,
-          wzrostWynagrodzen: 1.065
-        },
-        'Wielkopolskie': {
-          cenyBaza: 6000,
-          wynagrodzeniBaza: 3600,
-          wzrostCen: 1.085,
-          wzrostWynagrodzen: 1.07
-        },
-        'Małopolskie': {
-          cenyBaza: 7000,
-          wynagrodzeniBaza: 3400,
-          wzrostCen: 1.09,
-          wzrostWynagrodzen: 1.065
-        },
-        'Dolnośląskie': {
-          cenyBaza: 6800,
-          wynagrodzeniBaza: 3500,
-          wzrostCen: 1.087,
-          wzrostWynagrodzen: 1.068
-        }
-      };
-
-      const result: MetryData[] = [];
-
-      for (let rok = 2015; rok <= 2024; rok++) {
-        const yearOffset = rok - 2015;
-        const yearData: MetryData = { rok };
-
-        Object.entries(wojewodztwaData).forEach(([wojewodztwo, config]) => {
-          const { cenyBaza, wynagrodzeniBaza, wzrostCen, wzrostWynagrodzen } = config;
-          
-          const aktualnaCena = cenyBaza * Math.pow(wzrostCen, yearOffset);
-          const aktualneWynagrodzenie = wynagrodzeniBaza * Math.pow(wzrostWynagrodzen, yearOffset);
-          
-          // Ile m² można kupić za średnią wypłatę
-          const metryKwadratowe = aktualneWynagrodzenie / aktualnaCena;
-          
-          yearData[wojewodztwo] = Math.round(metryKwadratowe * 100) / 100; // Zaokrąglenie do 2 miejsc po przecinku
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Ładuj oba pliki CSV równocześnie
+        const [housingResponse, salaryResponse] = await Promise.all([
+          fetch('/Dane(Sheet1).csv'),
+          fetch('/Dane1(Sheet1).csv')
+        ]);
+        
+        const [housingText, salaryText] = await Promise.all([
+          housingResponse.text(),
+          salaryResponse.text()
+        ]);
+        
+        // Przetwórz dane cenowe
+        const housingData: { [year: number]: { [wojewodztwo: string]: number } } = {};
+        Papa.parse(housingText, {
+          header: false,
+          complete: (result) => {
+            const rows = result.data as string[][];
+            if (rows.length > 1) {
+              const years = rows[0].slice(1).map(year => parseInt(year));
+              
+              rows.slice(1).forEach((row) => {
+                if (row[0] && row.length > 1) {
+                  const wojewodztwo = row[0]
+                    .replace(/[^\p{L}\s-]/gu, '')
+                    .trim()
+                    .replace(/ŚLĄSKIE/g, 'Śląskie')
+                    .replace(/DOLNOŚLĄSKIE/g, 'Dolnośląskie')
+                    .replace(/KUJAWSKO-POMORSKIE/g, 'Kujawsko-Pomorskie')
+                    .replace(/LUBELSKIE/g, 'Lubelskie')
+                    .replace(/LUBUSKIE/g, 'Lubuskie')
+                    .replace(/ŁÓDZKIE/g, 'Łódzkie')
+                    .replace(/MAŁOPOLSKIE/g, 'Małopolskie')
+                    .replace(/MAZOWIECKIE/g, 'Mazowieckie')
+                    .replace(/OPOLSKIE/g, 'Opolskie')
+                    .replace(/PODKARPACKIE/g, 'Podkarpackie')
+                    .replace(/PODLASKIE/g, 'Podlaskie')
+                    .replace(/POMORSKIE/g, 'Pomorskie')
+                    .replace(/ŚWIĘTOKRZYSKIE/g, 'Świętokrzyskie')
+                    .replace(/WARMIŃSKO-MAZURSKIE/g, 'Warmińsko-Mazurskie')
+                    .replace(/WIELKOPOLSKIE/g, 'Wielkopolskie')
+                    .replace(/ZACHODNIOPOMORSKIE/g, 'Zachodniopomorskie');
+                  
+                  years.forEach((rok, index) => {
+                    if (row[index + 1]) {
+                      const priceStr = row[index + 1]
+                        .replace(/[^\d,]/g, '')
+                        .replace(',', '.');
+                      const price = parseFloat(priceStr);
+                      
+                      if (!isNaN(price) && price > 0) {
+                        if (!housingData[rok]) housingData[rok] = {};
+                        housingData[rok][wojewodztwo] = Math.round(price);
+                      }
+                    }
+                  });
+                }
+              });
+            }
+          }
         });
+        
+        // Przetwórz dane o wynagrodzeniach
+        const salaryData: { [year: number]: { [wojewodztwo: string]: number } } = {};
+        Papa.parse(salaryText, {
+          header: false,
+          complete: (result) => {
+            const rows = result.data as string[][];
+            if (rows.length > 1) {
+              const years = rows[0].slice(1).map(year => parseInt(year));
+              
+              rows.slice(1).forEach((row) => {
+                if (row[0] && row.length > 1) {
+                  const wojewodztwo = row[0]
+                    .replace(/[^\p{L}\s-]/gu, '')
+                    .trim()
+                    .replace(/ŚLĄSKIE/g, 'Śląskie')
+                    .replace(/DOLNOŚLĄSKIE/g, 'Dolnośląskie')
+                    .replace(/KUJAWSKO-POMORSKIE/g, 'Kujawsko-Pomorskie')
+                    .replace(/LUBELSKIE/g, 'Lubelskie')
+                    .replace(/LUBUSKIE/g, 'Lubuskie')
+                    .replace(/ŁÓDZKIE/g, 'Łódzkie')
+                    .replace(/MAŁOPOLSKIE/g, 'Małopolskie')
+                    .replace(/MAZOWIECKIE/g, 'Mazowieckie')
+                    .replace(/OPOLSKIE/g, 'Opolskie')
+                    .replace(/PODKARPACKIE/g, 'Podkarpackie')
+                    .replace(/PODLASKIE/g, 'Podlaskie')
+                    .replace(/POMORSKIE/g, 'Pomorskie')
+                    .replace(/ŚWIĘTOKRZYSKIE/g, 'Świętokrzyskie')
+                    .replace(/WARMIŃSKO-MAZURSKIE/g, 'Warmińsko-Mazurskie')
+                    .replace(/WIELKOPOLSKIE/g, 'Wielkopolskie')
+                    .replace(/ZACHODNIOPOMORSKIE/g, 'Zachodniopomorskie');
+                  
+                  years.forEach((rok, index) => {
+                    if (row[index + 1]) {
+                      const salaryStr = row[index + 1]
+                        .replace(/[^\d,]/g, '')
+                        .replace(',', '.');
+                      const salary = parseFloat(salaryStr);
+                      
+                      if (!isNaN(salary) && salary > 0) {
+                        if (!salaryData[rok]) salaryData[rok] = {};
+                        salaryData[rok][wojewodztwo] = Math.round(salary);
+                      }
+                    }
+                  });
+                }
+              });
+            }
+          }
+        });
+        
+        // Oblicz ile m² można kupić za średnią wypłatę
+        const calculateAffordability = () => {
+          const years = Object.keys(housingData).map(Number).sort();
+          const wojewodztwa = Object.keys(housingData[years[0]] || {});
+          
+          const result: MetryData[] = [];
+          
+          years.forEach(rok => {
+            const yearData: MetryData = { rok };
+            
+            wojewodztwa.forEach(wojewodztwo => {
+              const cena = housingData[rok]?.[wojewodztwo];
+              const wynagrodzenie = salaryData[rok]?.[wojewodztwo];
+              
+              if (cena && wynagrodzenie && cena > 0 && wynagrodzenie > 0) {
+                // Ile m² można kupić za średnią wypłatę
+                const metryKwadratowe = wynagrodzenie / cena;
+                yearData[wojewodztwo] = Math.round(metryKwadratowe * 100) / 100; // Zaokrąglenie do 2 miejsc po przecinku
+              }
+            });
+            
+            result.push(yearData);
+          });
+          
+          return result;
+        };
 
-        result.push(yearData);
+        const calculatedData = calculateAffordability();
+        setData(calculatedData);
+        
+        // Wyciągnij nazwy województw
+        const wojewodztwa = Object.keys(calculatedData[0] || {}).filter(key => key !== 'rok');
+        setAvailableWojewodztwa(wojewodztwa);
+        setSelectedWojewodztwa(wojewodztwa.slice(0, 3)); // Wybierz pierwsze 3 domyślnie
+        
+        setLoading(false);
+        
+      } catch (error) {
+        console.error('Błąd podczas ładowania danych:', error);
+        setLoading(false);
       }
-
-      return result;
     };
 
-    const calculatedData = calculateAffordability();
-    setData(calculatedData);
-    
-    // Wyciągnij nazwy województw
-    const wojewodztwa = Object.keys(calculatedData[0]).filter(key => key !== 'rok');
-    setAvailableWojewodztwa(wojewodztwa);
-    setSelectedWojewodztwa(wojewodztwa.slice(0, 3)); // Wybierz pierwsze 3 domyślnie
+    loadData();
   }, []);
 
   const handleWojewodztwoToggle = (wojewodztwo: string) => {
@@ -118,6 +213,15 @@ const MetryKwadratowe: React.FC = () => {
   };
 
   const affordabilityTrend = getAverageChange();
+
+  if (loading) {
+    return (
+      <div className="chart-section">
+        <h2>Ile m² Można Kupić za Średnią Wypłatę</h2>
+        <div className="loading">Ładowanie danych dostępności mieszkań...</div>
+      </div>
+    );
+  }
 
   const renderChart = () => {
     if (chartType === 'area') {

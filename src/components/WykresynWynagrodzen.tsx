@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import Papa from 'papaparse';
 
 interface WynagrodzeniaData {
   rok: number;
@@ -19,26 +20,87 @@ const WykresynWynagrodzen: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Symulowane dane wynagrodzeń dla różnych województw (2015-2024)
-    const mockData: WynagrodzeniaData[] = [
-      { rok: 2015, 'Mazowieckie': 4500, 'Śląskie': 3800, 'Wielkopolskie': 3600, 'Małopolskie': 3400, 'Dolnośląskie': 3500 },
-      { rok: 2016, 'Mazowieckie': 4700, 'Śląskie': 3950, 'Wielkopolskie': 3750, 'Małopolskie': 3550, 'Dolnośląskie': 3650 },
-      { rok: 2017, 'Mazowieckie': 4950, 'Śląskie': 4150, 'Wielkopolskie': 3950, 'Małopolskie': 3750, 'Dolnośląskie': 3850 },
-      { rok: 2018, 'Mazowieckie': 5200, 'Śląskie': 4350, 'Wielkopolskie': 4150, 'Małopolskie': 3950, 'Dolnośląskie': 4050 },
-      { rok: 2019, 'Mazowieckie': 5500, 'Śląskie': 4600, 'Wielkopolskie': 4400, 'Małopolskie': 4200, 'Dolnośląskie': 4300 },
-      { rok: 2020, 'Mazowieckie': 5750, 'Śląskie': 4800, 'Wielkopolskie': 4600, 'Małopolskie': 4400, 'Dolnośląskie': 4500 },
-      { rok: 2021, 'Mazowieckie': 6100, 'Śląskie': 5100, 'Wielkopolskie': 4900, 'Małopolskie': 4700, 'Dolnośląskie': 4800 },
-      { rok: 2022, 'Mazowieckie': 6500, 'Śląskie': 5450, 'Wielkopolskie': 5250, 'Małopolskie': 5000, 'Dolnośląskie': 5150 },
-      { rok: 2023, 'Mazowieckie': 7000, 'Śląskie': 5850, 'Wielkopolskie': 5650, 'Małopolskie': 5400, 'Dolnośląskie': 5550 },
-      { rok: 2024, 'Mazowieckie': 7500, 'Śląskie': 6300, 'Wielkopolskie': 6100, 'Małopolskie': 5850, 'Dolnośląskie': 6000 }
-    ];
+    const loadData = async () => {
+      try {
+        const response = await fetch('/Dane1(Sheet1).csv');
+        const csvText = await response.text();
+        
+        Papa.parse(csvText, {
+          header: false,
+          complete: (result) => {
+            const rows = result.data as string[][];
+            if (rows.length > 1) {
+              // Pierwsza linia zawiera lata (pomijamy pierwszą kolumnę z nazwą)
+              const years = rows[0].slice(1).map(year => parseInt(year));
+              
+              // Przygotowujemy dane w formacie potrzebnym do wykresu
+              const processedData: WynagrodzeniaData[] = years.map(rok => {
+                const yearData: WynagrodzeniaData = { rok };
+                
+                // Dla każdego województwa dodajemy wynagrodzenie za dany rok
+                rows.slice(1).forEach((row) => {
+                  if (row[0] && row.length > 1) {
+                    // Czyścimy nazwę województwa
+                    const wojewodztwo = row[0]
+                      .replace(/[^\p{L}\s-]/gu, '')
+                      .trim()
+                      .replace(/ŚLĄSKIE/g, 'Śląskie')
+                      .replace(/DOLNOŚLĄSKIE/g, 'Dolnośląskie')
+                      .replace(/KUJAWSKO-POMORSKIE/g, 'Kujawsko-Pomorskie')
+                      .replace(/LUBELSKIE/g, 'Lubelskie')
+                      .replace(/LUBUSKIE/g, 'Lubuskie')
+                      .replace(/ŁÓDZKIE/g, 'Łódzkie')
+                      .replace(/MAŁOPOLSKIE/g, 'Małopolskie')
+                      .replace(/MAZOWIECKIE/g, 'Mazowieckie')
+                      .replace(/OPOLSKIE/g, 'Opolskie')
+                      .replace(/PODKARPACKIE/g, 'Podkarpackie')
+                      .replace(/PODLASKIE/g, 'Podlaskie')
+                      .replace(/POMORSKIE/g, 'Pomorskie')
+                      .replace(/ŚWIĘTOKRZYSKIE/g, 'Świętokrzyskie')
+                      .replace(/WARMIŃSKO-MAZURSKIE/g, 'Warmińsko-Mazurskie')
+                      .replace(/WIELKOPOLSKIE/g, 'Wielkopolskie')
+                      .replace(/ZACHODNIOPOMORSKIE/g, 'Zachodniopomorskie');
+                    
+                    // Znajdź indeks roku i pobierz wynagrodzenie
+                    const yearIndex = years.indexOf(rok);
+                    if (yearIndex !== -1 && row[yearIndex + 1]) {
+                      // Konwertuj wynagrodzenie (usuń separatory tysięcy i zamień przecinek na kropkę)
+                      const salaryStr = row[yearIndex + 1]
+                        .replace(/[^\d,]/g, '')
+                        .replace(',', '.');
+                      const salary = parseFloat(salaryStr);
+                      
+                      if (!isNaN(salary) && salary > 0) {
+                        yearData[wojewodztwo] = Math.round(salary);
+                      }
+                    }
+                  }
+                });
+                
+                return yearData;
+              });
+              
+              setData(processedData);
+              
+              // Wyciągnij nazwy województw z pierwszego roku danych
+              const wojewodztwa = Object.keys(processedData[0] || {}).filter(key => key !== 'rok');
+              setAvailableWojewodztwa(wojewodztwa);
+              setSelectedWojewodztwa(wojewodztwa.slice(0, 3));
+            }
+            setLoading(false);
+          },
+          error: (error: Error) => {
+            console.error('Błąd podczas parsowania CSV:', error);
+            setLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('Błąd podczas ładowania danych:', error);
+        setLoading(false);
+      }
+    };
 
-    setData(mockData);
-    
-    // Wyciągnij nazwy województw (pomijając kolumnę 'rok')
-    const wojewodztwa = Object.keys(mockData[0]).filter(key => key !== 'rok');
-    setAvailableWojewodztwa(wojewodztwa);
-    setSelectedWojewodztwa(wojewodztwa.slice(0, 3)); // Wybierz pierwsze 3 domyślnie
+    loadData();
   }, []);
 
   const handleWojewodztwoToggle = (wojewodztwo: string) => {
