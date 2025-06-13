@@ -1,11 +1,66 @@
-# React + TypeScript + Vite
+# Analiza Rynku Mieszkaniowego i Wynagrodzeń w Polsce
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interaktywna aplikacja do wizualizacji danych dotyczących rynku mieszkaniowego i wynagrodzeń w Polsce w latach 2010-2024.
 
-Currently, two official plugins are available:
+## 🚀 Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Aplikacja jest dostępna pod adresem: [https://wizualizacja.github.io](https://wizualizacja.github.io)
+
+## 📊 Funkcjonalności
+
+- **Ewolucja Cen Mieszkań** - Analiza zmian cen mieszkań w różnych województwach
+- **Wykresy Wynagrodzeń** - Wizualizacja wzrostu wynagrodzeń w czasie
+- **Porównanie Trendów** - Zestawienie wzrostu cen mieszkań vs wzrostu wynagrodzeń
+- **Dostępność Mieszkań** - Ile m² można kupić za średnią miesięczną wypłatę
+
+## 🛠️ Technologie
+
+- React 19 + TypeScript
+- Vite (build tool)
+- Recharts (wykresy)
+- Papa Parse (CSV parsing)
+- GitHub Pages (hosting)
+
+## 🚀 Instalacja i uruchomienie
+
+```bash
+# Klonowanie repozytorium
+git clone https://github.com/[username]/wizualizacja.git
+cd wizualizacja
+
+# Instalacja zależności
+npm install
+
+# Uruchomienie serwera deweloperskiego
+npm run dev
+
+# Build do produkcji
+npm run build
+
+# Deploy na GitHub Pages
+npm run deploy
+```
+
+## 📈 Źródła danych
+
+Dane pochodzą z oficjalnych statystyk dotyczących:
+- Średnich cen lokali mieszkalnych sprzedanych w ramach transakcji rynkowych
+- Przeciętnych miesięcznych wynagrodzeń brutto w województwach
+
+## 🔧 Deployment
+
+Projekt jest automatycznie deployowany na GitHub Pages przy każdym push do gałęzi `main` poprzez GitHub Actions.
+
+### Manualne deployment:
+```bash
+npm run deploy
+```
+
+## 📝 Metodologia
+
+**Dostępność mieszkań** obliczana jest jako:
+- Cena za m² = Średnia cena mieszkania / 65 m² (założona średnia powierzchnia)
+- Metrów kwadratowych za wypłatę = Miesięczne wynagrodzenie brutto / Cena za m²
 
 ## Expanding the ESLint configuration
 
