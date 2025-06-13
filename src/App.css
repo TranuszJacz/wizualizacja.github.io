@@ -405,10 +405,82 @@ td.negative {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 2rem;
+  padding: 3rem 2rem 2rem;
+  margin-top: 3rem;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.declaration {
+  max-width: 1200px;
+  margin: 0 auto;
+  color: #2c3e50;
+}
+
+.declaration h3 {
+  font-size: 1.8rem;
+  color: #34495e;
+  margin-bottom: 1rem;
   text-align: center;
-  color: #7f8c8d;
-  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.declaration h4 {
+  font-size: 1.4rem;
+  color: #34495e;
+  margin: 2rem 0 1rem;
+  font-weight: 600;
+}
+
+.declaration p {
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  text-align: justify;
+}
+
+.declaration a {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.declaration a:hover {
+  text-decoration: underline;
+}
+
+.declaration ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.declaration li {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.authors {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 2px solid #ecf0f1;
+  text-align: center;
+}
+
+.authors p {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.authors ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.authors li {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2980b9;
+  margin-bottom: 0.5rem;
 }
 
 /* Loading state */
@@ -475,6 +547,22 @@ td.negative {
   
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .app-footer {
+    padding: 2rem 1rem 1.5rem;
+  }
+  
+  .declaration h3 {
+    font-size: 1.5rem;
+  }
+  
+  .declaration h4 {
+    font-size: 1.2rem;
+  }
+  
+  .declaration p {
+    font-size: 0.9rem;
   }
 }
 
