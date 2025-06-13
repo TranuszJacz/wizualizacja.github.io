@@ -1,35 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import EwolucjaCenMieszkan from './components/EwolucjaCenMieszkan'
+import WykresynWynagrodzen from './components/WykresynWynagrodzen'
+import PorownanieTrendow from './components/PorownanieTrendow'
+import MetryKwadratowe from './components/MetryKwadratowe'
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+const App: React.FC = () => {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="app">
+      <header className="app-header">
+        <h1>Analiza Rynku Mieszkaniowego i Wynagrodzeń w Polsce</h1>
+        <p>Trendy cen mieszkań, wynagrodzeń i dostępności mieszkań w latach 2015-2024</p>
+      </header>
+      
+      <main className="app-main">
+        <section className="chart-section">
+          <EwolucjaCenMieszkan />
+        </section>
+        
+        <section className="chart-section">
+          <WykresynWynagrodzen />
+        </section>
+        
+        <section className="chart-section">
+          <PorownanieTrendow />
+        </section>
+        
+        <section className="chart-section">
+          <MetryKwadratowe />
+        </section>
+      </main>
+      
+      <footer className="app-footer">
+        <p>© 2024 Analiza Rynku Mieszkaniowego - Dane symulowane dla celów demonstracyjnych</p>
+      </footer>
+    </div>
+  );
+};
 
-export default App
+export default App;
